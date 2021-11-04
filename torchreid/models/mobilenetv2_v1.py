@@ -205,12 +205,15 @@ class MobileNetV2(nn.Module):
     def forward(self, x):
         f = self.featuremaps(x)
         v = self.global_avgpool(f)
+        if True:#for better export. and put normalize outside to metric. manually change here
+            return v
+
         v = v.view(v.size(0), -1)
         
         if self.fc is not None:
             v = self.fc(v)
 
-        if not self.training:#for better export. and put normalize outside to metric
+        if not self.training:
             return v
 
         y = self.classifier(v)

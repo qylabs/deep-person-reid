@@ -106,6 +106,10 @@ def get_default_config():
     cfg.test.visrank = False # visualize ranked results (only available when cfg.test.evaluate=True)
     cfg.test.visrank_topk = 10 # top-k ranks to visualize
 
+    # export
+    cfg.export = CN()
+    cfg.export.onnx=False
+    cfg.export.load_weights = '' # path to model weights
     return cfg
 
 

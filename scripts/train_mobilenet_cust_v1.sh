@@ -1,3 +1,12 @@
+# '''
+# train from scratch not good
+# mAP: 34.8%
+# CMC curve
+# Rank-1  : 55.9%
+# Rank-5  : 77.6%
+# Rank-10 : 85.0%
+# Rank-20 : 90.7%
+# '''
 
 CONFIG=configs/im_mobilnet_cust_v1_softmax_128x64_amsgrad.yaml
 PATH_TO_DATA=data

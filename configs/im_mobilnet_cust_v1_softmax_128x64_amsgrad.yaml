@@ -35,3 +35,7 @@ test:
   evaluate: False
   eval_freq: 10
   rerank: False
+
+export:
+  onnx: False
+  load_weights: ''

@@ -15,7 +15,7 @@ from default_config import (
     imagedata_kwargs, optimizer_kwargs, videodata_kwargs, engine_run_kwargs,
     get_default_config, lr_scheduler_kwargs
 )
-
+import onnx
 
 def build_datamanager(cfg):
     if cfg.data.type == 'image':
@@ -94,6 +94,30 @@ def check_cfg(cfg):
             'The output of classifier is not included in the computational graph'
 
 
+def export_onnx(model,in_channel,img_width,img_height,weights,simplify=True):
+    model.eval
+    img = torch.randn(1, in_channel,img_height, img_width)
+
+    for _ in range(2):
+        y = model(img)  # dry runs
+    
+    # ONNX export ------------------------------------------------------------------------------------------------------
+    f = weights.replace('.pth','').replace('.tar','')+'.onnx'  # filename
+    torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'])
+
+    # Checks
+    model_onnx = onnx.load(f)  # load onnx model
+
+    # Simplify
+    if simplify:
+        import onnxsim
+        print("==simplify==")
+        model_onnx, check = onnxsim.simplify(
+            model_onnx)
+        onnx.save(model_onnx, f)
+
+
+
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -168,7 +192,8 @@ def main():
         load_pretrained_weights(model, cfg.model.load_weights)
 
     if cfg.use_gpu:
-        model = nn.DataParallel(model).cuda()
+        if not(cfg.export.onnx and cfg.export.load_weights and check_isfile(cfg.export.load_weights)):
+            model = nn.DataParallel(model).cuda()
 
     optimizer = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
     scheduler = torchreid.optim.build_lr_scheduler(
@@ -184,6 +209,15 @@ def main():
         'Building {}-engine for {}-reid'.format(cfg.loss.name, cfg.data.type)
     )
     engine = build_engine(cfg, datamanager, model, optimizer, scheduler)
+
+    print(cfg.export.onnx,cfg.export.load_weights)
+    print(check_isfile(cfg.export.load_weights))
+    if cfg.export.onnx and cfg.export.load_weights and check_isfile(cfg.export.load_weights):
+        model=engine.model.to('cpu')
+        load_pretrained_weights(model, cfg.export.load_weights)
+        export_onnx(model,3,cfg.data.width,cfg.data.height,cfg.export.load_weights)
+        return
+
     engine.run(**engine_run_kwargs(cfg))
 
 
