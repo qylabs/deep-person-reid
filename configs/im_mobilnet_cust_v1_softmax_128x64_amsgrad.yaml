@@ -1,0 +1,37 @@
+model:
+  name: 'mobilenetv2_x1_0_v1' #relu6->relu, shallow, feature_dim 1280->512. size->(128,64)
+  pretrained: False
+  # load_weights: 'checkpoint/mobilenetv2_1dot0_market.pth.tar'
+
+data:
+  type: 'image'
+  sources: ['market1501']
+  targets: ['market1501']
+  height: 128
+  width: 64
+  combineall: False
+  transforms: ['random_flip']
+  save_dir: 'log/mobilenet_cust_v1_market1501_softmax'
+
+loss:
+  name: 'softmax'
+  softmax:
+    label_smooth: True
+
+train:
+  optim: 'amsgrad'
+  lr: 0.0003
+  max_epoch: 80
+  batch_size: 32
+  fixbase_epoch: 5
+  open_layers: ['classifier']
+  lr_scheduler: 'single_step'
+  stepsize: [30]
+
+test:
+  batch_size: 100
+  dist_metric: 'euclidean'
+  normalize_feature: False
+  evaluate: False
+  eval_freq: 10
+  rerank: False

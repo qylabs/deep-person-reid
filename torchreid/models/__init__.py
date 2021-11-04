@@ -21,6 +21,7 @@ from .resnet_ibn_a import *
 from .resnet_ibn_b import *
 from .shufflenetv2 import *
 from .inceptionresnetv2 import *
+from .mobilenetv2_v1 import *
 
 __model_factory = {
     # image classification models
@@ -51,6 +52,8 @@ __model_factory = {
     'nasnsetmobile': nasnetamobile,
     'mobilenetv2_x1_0': mobilenetv2_x1_0,
     'mobilenetv2_x1_4': mobilenetv2_x1_4,
+    'mobilenetv2_x1_0_v1': mobilenetv2_x1_0_v1,
+    'mobilenetv2_x1_4_v1': mobilenetv2_x1_4_v1,
     'shufflenet': shufflenet,
     'squeezenet1_0': squeezenet1_0,
     'squeezenet1_0_fc512': squeezenet1_0_fc512,

@@ -6,6 +6,12 @@ six
 scipy
 opencv-python
 matplotlib
+pyparsing<3,>=2.0.2
+flake8-import-order
+pandas
+pytest
+pytest-benchmark
+xmltodict
 tb-nightly
 future
 yacs
