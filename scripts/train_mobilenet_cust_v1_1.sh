@@ -12,6 +12,8 @@
 # original model zoo results:Rank-1(mAP)=85.6 (67.3)
 # '''
 
+# Before run export script, Be sure to change model forward 
+
 CONFIG=configs/im_mobilnet_cust_v1_softmax_128x64_amsgrad.yaml
 PATH_TO_DATA=data
 
