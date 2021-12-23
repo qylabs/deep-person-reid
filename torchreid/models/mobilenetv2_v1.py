@@ -92,8 +92,8 @@ class MobileNetV2(nn.Module):
         super(MobileNetV2, self).__init__()
         self.loss = loss
         self.in_channels = int(32 * width_mult)
-        self.feature_dim = int(1280 * width_mult) if width_mult > 1 else 1280
-        # self.feature_dim = 512
+        # self.feature_dim = int(1280 * width_mult) if width_mult > 1 else 1280
+        self.feature_dim = 512
 
         # construct layers
         self.conv1 = ConvBlock(3, self.in_channels, 3, s=2, p=1)
