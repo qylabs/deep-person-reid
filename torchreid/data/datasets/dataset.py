@@ -151,6 +151,8 @@ class Dataset(object):
         Each tuple in data contains (img_path(s), pid, camid, dsetid).
         """
         pids = set()
+        if len(data[0]) == 0:
+            return 0
         for items in data:
             pid = items[1]
             pids.add(pid)
@@ -162,6 +164,8 @@ class Dataset(object):
         Each tuple in data contains (img_path(s), pid, camid, dsetid).
         """
         cams = set()
+        if len(data[0]) == 0:
+            return 0
         for items in data:
             camid = items[2]
             cams.add(camid)
@@ -173,6 +177,8 @@ class Dataset(object):
         Each tuple in data contains (img_path(s), pid, camid, dsetid).
         """
         dsets = set()
+        if len(data[0]) == 0:
+            return 0
         for items in data:
             dsetid = items[3]
             dsets.add(dsetid)

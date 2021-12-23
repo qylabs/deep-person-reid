@@ -1,12 +1,12 @@
 model:
   name: 'mobilenetv2_x1_0_v1' #relu6->relu, shallow, feature_dim 1280->512. size->(128,64)
-  pretrained: False
+  pretrained: True
   # load_weights: 'checkpoint/mobilenetv2_1dot0_market.pth.tar'
 
 data:
   type: 'image'
-  sources: ['market1501']
-  targets: ['market1501']
+  sources: ['market1501', 'dy']
+  targets: ['market1501', 'dy', 'cust']
   height: 128
   width: 64
   combineall: False

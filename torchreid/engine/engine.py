@@ -76,6 +76,9 @@ class Engine(object):
         names = self.get_model_names()
 
         for name in names:
+            if is_best:
+                torch.save(self._models[name], f'log/11model/best_{rank1}.pth')
+            torch.save(self._models[name], f'log/11model/latest_{rank1}.pth')
             save_checkpoint(
                 {
                     'state_dict': self._models[name].state_dict(),
@@ -111,23 +114,23 @@ class Engine(object):
                 self._scheds[name].step()
 
     def run(
-        self,
-        save_dir='log',
-        max_epoch=0,
-        start_epoch=0,
-        print_freq=10,
-        fixbase_epoch=0,
-        open_layers=None,
-        start_eval=0,
-        eval_freq=-1,
-        test_only=False,
-        dist_metric='euclidean',
-        normalize_feature=False,
-        visrank=False,
-        visrank_topk=10,
-        use_metric_cuhk03=False,
-        ranks=[1, 5, 10, 20],
-        rerank=False
+            self,
+            save_dir='log',
+            max_epoch=0,
+            start_epoch=0,
+            print_freq=10,
+            fixbase_epoch=0,
+            open_layers=None,
+            start_eval=0,
+            eval_freq=-1,
+            test_only=False,
+            dist_metric='euclidean',
+            normalize_feature=False,
+            visrank=False,
+            visrank_topk=10,
+            use_metric_cuhk03=False,
+            ranks=[1, 5, 10, 20],
+            rerank=False
     ):
         r"""A unified pipeline for training and evaluating a model.
 
@@ -185,7 +188,7 @@ class Engine(object):
         self.start_epoch = start_epoch
         self.max_epoch = max_epoch
         print('=> Start training')
-
+        rank_temp = 0
         for self.epoch in range(self.start_epoch, self.max_epoch):
             self.train(
                 print_freq=print_freq,
@@ -194,9 +197,9 @@ class Engine(object):
             )
 
             if (self.epoch + 1) >= start_eval \
-               and eval_freq > 0 \
-               and (self.epoch+1) % eval_freq == 0 \
-               and (self.epoch + 1) != self.max_epoch:
+                    and eval_freq > 0 \
+                    and (self.epoch + 1) % eval_freq == 0 \
+                    and (self.epoch + 1) != self.max_epoch:
                 rank1 = self.test(
                     dist_metric=dist_metric,
                     normalize_feature=normalize_feature,
@@ -206,7 +209,11 @@ class Engine(object):
                     use_metric_cuhk03=use_metric_cuhk03,
                     ranks=ranks
                 )
-                self.save_model(self.epoch, rank1, save_dir)
+                is_best = False
+                if rank1 > rank_temp:
+                    rank_temp = rank1
+                    is_best = True
+                self.save_model(self.epoch, rank1, save_dir, is_best)
 
         if self.max_epoch > 0:
             print('=> Final test')
@@ -219,7 +226,10 @@ class Engine(object):
                 use_metric_cuhk03=use_metric_cuhk03,
                 ranks=ranks
             )
-            self.save_model(self.epoch, rank1, save_dir)
+            is_best = False
+            if rank1 > rank_temp:
+                is_best = True
+            self.save_model(self.epoch, rank1, save_dir, is_best)
 
         elapsed = round(time.time() - time_start)
         elapsed = str(datetime.timedelta(seconds=elapsed))
@@ -249,9 +259,9 @@ class Engine(object):
             if (self.batch_idx + 1) % print_freq == 0:
                 nb_this_epoch = self.num_batches - (self.batch_idx + 1)
                 nb_future_epochs = (
-                    self.max_epoch - (self.epoch + 1)
-                ) * self.num_batches
-                eta_seconds = batch_time.avg * (nb_this_epoch+nb_future_epochs)
+                                           self.max_epoch - (self.epoch + 1)
+                                   ) * self.num_batches
+                eta_seconds = batch_time.avg * (nb_this_epoch + nb_future_epochs)
                 eta_str = str(datetime.timedelta(seconds=int(eta_seconds)))
                 print(
                     'epoch: [{0}/{1}][{2}/{3}]\t'
@@ -290,15 +300,15 @@ class Engine(object):
         raise NotImplementedError
 
     def test(
-        self,
-        dist_metric='euclidean',
-        normalize_feature=False,
-        visrank=False,
-        visrank_topk=10,
-        save_dir='',
-        use_metric_cuhk03=False,
-        ranks=[1, 5, 10, 20],
-        rerank=False
+            self,
+            dist_metric='euclidean',
+            normalize_feature=False,
+            visrank=False,
+            visrank_topk=10,
+            save_dir='',
+            use_metric_cuhk03=False,
+            ranks=[1, 5, 10, 20],
+            rerank=False
     ):
         r"""Tests model on target datasets.
 
@@ -343,18 +353,18 @@ class Engine(object):
 
     @torch.no_grad()
     def _evaluate(
-        self,
-        dataset_name='',
-        query_loader=None,
-        gallery_loader=None,
-        dist_metric='euclidean',
-        normalize_feature=False,
-        visrank=False,
-        visrank_topk=10,
-        save_dir='',
-        use_metric_cuhk03=False,
-        ranks=[1, 5, 10, 20],
-        rerank=False
+            self,
+            dataset_name='',
+            query_loader=None,
+            gallery_loader=None,
+            dist_metric='euclidean',
+            normalize_feature=False,
+            visrank=False,
+            visrank_topk=10,
+            save_dir='',
+            use_metric_cuhk03=False,
+            ranks=[1, 5, 10, 20],
+            rerank=False
     ):
         batch_time = AverageMeter()
 
@@ -396,7 +406,13 @@ class Engine(object):
         )
         distmat = metrics.compute_distance_matrix(qf, gf, dist_metric)
         distmat = distmat.numpy()
-
+        '''
+        print(distmat)
+        print(q_pids)
+        print(g_pids)
+        print(q_camids)
+        print(g_camids)
+        '''
         if rerank:
             print('Applying person re-ranking ...')
             distmat_qq = metrics.compute_distance_matrix(qf, qf, dist_metric)
@@ -417,8 +433,10 @@ class Engine(object):
         print('mAP: {:.1%}'.format(mAP))
         print('CMC curve')
         for r in ranks:
-            print('Rank-{:<3}: {:.1%}'.format(r, cmc[r - 1]))
-
+            try:
+                print('Rank-{:<3}: {:.1%}'.format(r, cmc[r - 1]))
+            except:
+                break
         if visrank:
             visualize_ranked_results(
                 distmat,
@@ -454,7 +472,7 @@ class Engine(object):
         return imgs, pids, camids
 
     def two_stepped_transfer_learning(
-        self, epoch, fixbase_epoch, open_layers, model=None
+            self, epoch, fixbase_epoch, open_layers, model=None
     ):
         """Two-stepped transfer learning.
 

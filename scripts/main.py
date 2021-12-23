@@ -4,6 +4,9 @@ import os.path as osp
 import argparse
 import torch
 import torch.nn as nn
+import os
+
+os.environ["TORCH_HOME"] = "E:\\111\\deep-person-reid-master\\pre-tr-m"
 
 import torchreid
 from torchreid.utils import (

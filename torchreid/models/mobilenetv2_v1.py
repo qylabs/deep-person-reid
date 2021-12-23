@@ -92,8 +92,8 @@ class MobileNetV2(nn.Module):
         super(MobileNetV2, self).__init__()
         self.loss = loss
         self.in_channels = int(32 * width_mult)
-        # self.feature_dim = int(1280 * width_mult) if width_mult > 1 else 1280
-        self.feature_dim = 512
+        self.feature_dim = int(1280 * width_mult) if width_mult > 1 else 1280
+        # self.feature_dim = 512
 
         # construct layers
         self.conv1 = ConvBlock(3, self.in_channels, 3, s=2, p=1)
@@ -107,17 +107,17 @@ class MobileNetV2(nn.Module):
             Bottleneck, 6, int(32 * width_mult), 3, 2
         )
         self.conv5 = self._make_layer(
-            Bottleneck, 6, int(64 * width_mult), 2, 2
+            Bottleneck, 6, int(64 * width_mult), 4, 2
         )
-        # self.conv6 = self._make_layer(
-        #     Bottleneck, 6, int(96 * width_mult), 3, 1
-        # )
-        # self.conv7 = self._make_layer(
-        #     Bottleneck, 6, int(160 * width_mult), 3, 2
-        # )
-        # self.conv8 = self._make_layer(
-        #     Bottleneck, 6, int(320 * width_mult), 1, 1
-        # )
+        self.conv6 = self._make_layer(
+            Bottleneck, 6, int(96 * width_mult), 3, 1
+        )
+        self.conv7 = self._make_layer(
+            Bottleneck, 6, int(160 * width_mult), 3, 2
+        )
+        self.conv8 = self._make_layer(
+            Bottleneck, 6, int(320 * width_mult), 1, 1
+        )
         self.conv9 = ConvBlock(self.in_channels, self.feature_dim, 1)
 
         self.global_avgpool = nn.AdaptiveAvgPool2d(1)
@@ -196,27 +196,27 @@ class MobileNetV2(nn.Module):
         x = self.conv3(x)
         x = self.conv4(x)
         x = self.conv5(x)
-        # x = self.conv6(x)
-        # x = self.conv7(x)
-        # x = self.conv8(x)
+        x = self.conv6(x)
+        x = self.conv7(x)
+        x = self.conv8(x)
         x = self.conv9(x)
         return x
 
     def forward(self, x):
         f = self.featuremaps(x)
         v = self.global_avgpool(f)
-        if True:#for better export. and put normalize outside to metric. manually change here
-            return v
+        # if True:#for better export. and put normalize outside to metric. manually change here
+        #     return v
 
         v = v.view(v.size(0), -1)
         
         if self.fc is not None:
             v = self.fc(v)
 
+        y = self.classifier(v)
+
         if not self.training:
             return v
-
-        y = self.classifier(v)
 
         if self.loss == 'softmax':
             return y
@@ -231,7 +231,9 @@ def init_pretrained_weights(model, model_url):
     
     Layers that don't match with pretrained layers in name or size are kept unchanged.
     """
-    pretrain_dict = model_zoo.load_url(model_url)
+    # pretrain_dict = model_zoo.load_url(model_url)
+    pretrain_dict = torch.load(r'pre-tr-m/hub/checkpoints/mobilenetv2_1.0-0f96a698.pth')
+    # print(pretrain_dict)
     model_dict = model.state_dict()
     pretrain_dict = {
         k: v
@@ -243,6 +245,9 @@ def init_pretrained_weights(model, model_url):
 
 
 def mobilenetv2_x1_0_v1(num_classes, loss, pretrained=True, **kwargs):
+    # model = torch.load(r'pre-tr-m/purned_all_layers_3_mobilenetv2.pth')
+    #     # return model
+    # 剪枝的时候这两行注解, 训练的时候取消注解 1. 保存 每层剪枝的效果最好模型 2. 记录最好效果
     model = MobileNetV2(
         num_classes,
         loss=loss,

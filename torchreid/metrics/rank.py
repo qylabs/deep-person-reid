@@ -5,7 +5,7 @@ from collections import defaultdict
 
 try:
     from torchreid.metrics.rank_cylib.rank_cy import evaluate_cy
-    IS_CYTHON_AVAI = True
+    IS_CYTHON_AVAI = False
 except ImportError:
     IS_CYTHON_AVAI = False
     warnings.warn(
@@ -119,12 +119,19 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
 
         # remove gallery samples that have the same pid and camid with query
         order = indices[q_idx]
-        remove = (g_pids[order] == q_pid) & (g_camids[order] == q_camid)
-        keep = np.invert(remove)
+        if len(list(set(g_camids))) == 1:
+            #print('Only one camera!')
+            raw_cmc = matches[q_idx]
+        else:
+            remove = (g_pids[order] == q_pid) & (g_camids[order] == q_camid)
+            keep = np.invert(remove)
+            raw_cmc = matches[q_idx][keep]
+        # remove = (g_pids[order] == q_pid) & (g_camids[order] == q_camid)
+        # keep = np.invert(remove)
 
         # compute cmc curve
-        raw_cmc = matches[q_idx][
-            keep] # binary vector, positions with value 1 are correct matches
+        # raw_cmc = matches[q_idx][
+        #     keep] # binary vector, positions with value 1 are correct matches
         if not np.any(raw_cmc):
             # this condition is true when query identity does not appear in gallery
             continue

@@ -9,6 +9,7 @@ import warnings
 import torch
 import torch.nn as nn
 
+
 import torchreid
 from torchreid.utils import (
     Logger, AverageMeter, check_isfile, open_all_layers, save_checkpoint,
